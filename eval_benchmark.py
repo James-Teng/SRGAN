@@ -12,8 +12,8 @@ import utils
 import datasets
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
-from PIL import Image
-import numpy as np
+# from PIL import Image
+# import numpy as np
 import argparse
 import time
 import os
