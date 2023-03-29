@@ -44,8 +44,8 @@ if __name__ == '__main__':
     task_path_dict = tm.get_task_path(args.taskid)
 
     # path
-    task_path = task_path_dict['task_path']
-    log_path = task_path_dict['log_path']
+    # task_path = task_path_dict['task_path']
+    # log_path = task_path_dict['log_path']
     checkpoint_path = task_path_dict['checkpoint_path']
     record_path = task_path_dict['record_path']
 
