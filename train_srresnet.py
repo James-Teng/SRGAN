@@ -22,7 +22,11 @@ import time
 from tqdm import tqdm
 
 
+is_record_iter = False
+
 if __name__ == '__main__':
+
+    global is_record_iter
 
     # arg
     parser = argparse.ArgumentParser(description='train SRResNet')
@@ -149,7 +153,8 @@ if __name__ == '__main__':
     print('\n{:-^70}\n'.format(f' training started at {strtime} '))
 
     loss_epochs_list = utils.LossSaver()  # record loss per epoch
-    loss_iters_list = utils.LossSaver()  # record loss per iter
+    if is_record_iter:
+        loss_iters_list = utils.LossSaver()  # record loss per iter
     writer = SummaryWriter()  # tensorboard
 
     total_bar = tqdm(range(start_epoch, total_epochs), desc='[Total Progress]')
@@ -179,7 +184,8 @@ if __name__ == '__main__':
             optimizer.step()
 
             # record loss
-            loss_iters_list.append(loss.item())
+            if is_record_iter:
+                loss_iters_list.append(loss.item())
             loss_epoch.update(loss.item(), lr_img.shape[0])  # per epoch loss
 
         # record img change
@@ -210,7 +216,8 @@ if __name__ == '__main__':
 
     # save loss file
     loss_epochs_list.save_to_file(os.path.join(record_path, f'epoch_loss_{start_epoch}_{total_epochs-1}.npy'))
-    loss_iters_list.save_to_file(os.path.join(record_path, f'iter_loss_{start_epoch}_{total_epochs-1}.npy'))
+    if is_record_iter:
+        loss_iters_list.save_to_file(os.path.join(record_path, f'iter_loss_{start_epoch}_{total_epochs-1}.npy'))
 
     writer.close()
 

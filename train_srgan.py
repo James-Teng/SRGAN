@@ -21,7 +21,11 @@ import argparse
 import time
 from tqdm import tqdm
 
+is_record_iter = False
+
 if __name__ == '__main__':
+
+    global is_record_iter
 
     # arg
     parser = argparse.ArgumentParser(description='train SRGAN')
@@ -227,13 +231,13 @@ if __name__ == '__main__':
 
     # --------------------------
     loss_epochs_g_content_list = utils.LossSaver()  # content loss
-    loss_iters_g_content_list = utils.LossSaver()
-
     loss_epochs_g_adversarial_list = utils.LossSaver()  # adversarial loss
-    loss_iters_g_adversarial_list = utils.LossSaver()
-
     loss_epochs_d_list = utils.LossSaver()  # discriminator loss
-    loss_iters_d_list = utils.LossSaver()
+
+    if is_record_iter:
+        loss_iters_g_content_list = utils.LossSaver()
+        loss_iters_g_adversarial_list = utils.LossSaver()
+        loss_iters_d_list = utils.LossSaver()
 
     writer = SummaryWriter()  # tensorboard
 
@@ -289,10 +293,13 @@ if __name__ == '__main__':
             optimizer_g.step()
 
             # record loss --------------------------
-            loss_iters_g_content_list.append(content_loss_g.item())
+
             loss_epoch_g_content.update(content_loss_g.item(), lr_imgs.shape[0])
-            loss_iters_g_adversarial_list.append(adversarial_loss_g.item())
+
             loss_epoch_g_adversarial.update(adversarial_loss_g.item(), lr_imgs.shape[0])
+            if is_record_iter:
+                loss_iters_g_content_list.append(content_loss_g.item())
+                loss_iters_g_adversarial_list.append(adversarial_loss_g.item())
 
             # --------------------- train discriminator ---------------------
 
@@ -317,8 +324,9 @@ if __name__ == '__main__':
             optimizer_d.step()
 
             # record loss --------------------------
-            loss_iters_d_list.append(adversarial_loss_d.item())
             loss_epoch_d.update(adversarial_loss_d.item(), lr_imgs.shape[0])
+            if is_record_iter:
+                loss_iters_d_list.append(adversarial_loss_d.item())
 
         # update scheduler
         scheduler_g.step()
@@ -364,16 +372,22 @@ if __name__ == '__main__':
         )
 
     # save loss file
-    loss_iters_g_content_list.save_to_file(os.path.join(record_path, f'loss_iters_g_content_{start_epoch}_{total_epochs-1}.npy'))
-    loss_epochs_g_content_list.save_to_file(os.path.join(record_path, f'loss_epochs_g_content_{start_epoch}_{total_epochs - 1}.npy'))
-
-    loss_iters_g_adversarial_list.save_to_file(os.path.join(record_path, f'loss_iters_g_adversarial_{start_epoch}_{total_epochs - 1}.npy'))
-    loss_epochs_g_adversarial_list.save_to_file(os.path.join(record_path, f'loss_epochs_g_adversarial_{start_epoch}_{total_epochs - 1}.npy'))
-
-    loss_iters_d_list.save_to_file(os.path.join(record_path, f'loss_iters_d_{start_epoch}_{total_epochs - 1}.npy'))
-    loss_epochs_d_list.save_to_file(os.path.join(record_path, f'loss_epochs_d_{start_epoch}_{total_epochs - 1}.npy'))
+    loss_epochs_g_content_list.save_to_file(
+        os.path.join(record_path, f'loss_epochs_g_content_{start_epoch}_{total_epochs - 1}.npy'))
+    loss_epochs_g_adversarial_list.save_to_file(
+        os.path.join(record_path, f'loss_epochs_g_adversarial_{start_epoch}_{total_epochs - 1}.npy'))
+    loss_epochs_d_list.save_to_file(
+        os.path.join(record_path, f'loss_epochs_d_{start_epoch}_{total_epochs - 1}.npy'))
+    if is_record_iter:
+        loss_iters_g_content_list.save_to_file(
+            os.path.join(record_path, f'loss_iters_g_content_{start_epoch}_{total_epochs - 1}.npy'))
+        loss_iters_g_adversarial_list.save_to_file(
+            os.path.join(record_path, f'loss_iters_g_adversarial_{start_epoch}_{total_epochs - 1}.npy'))
+        loss_iters_d_list.save_to_file(
+            os.path.join(record_path, f'loss_iters_d_{start_epoch}_{total_epochs - 1}.npy'))
 
     writer.close()
+
 
     # print time
     strtime = time.strftime(f'%Y.%m.%d %H:%M:%S %A', time.localtime())
