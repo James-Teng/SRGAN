@@ -12,8 +12,6 @@ from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid
 
-import torch.distributed as dist
-
 import utils
 from arch import SRResNet
 import datasets
@@ -94,7 +92,7 @@ def dist_worker(
     # resume
     if resume_path:
         if os.path.isfile(resume_path):
-            print(f'Checkpoint found, loading...')
+            print(f'Cuda{rank}: Checkpoint found, loading to cuda:{rank}...')
 
             checkpoint = torch.load(
                 resume_path,
@@ -108,7 +106,7 @@ def dist_worker(
             raise FileNotFoundError(f'No checkpoint found at \'{resume_path}\'')
 
     else:
-        print('train from scratch')
+        print(f'Cuda{rank}: train from scratch')
 
     # distribute
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank])
@@ -137,6 +135,7 @@ def dist_worker(
         batch_size=batch_size,
         shuffle=(datasampler is None),  # datasampler 自动 shuffle, 使用是 loader 不能 shuffle
         num_workers=worker,
+        sampler=datasampler,
         pin_memory=True,
         drop_last=True,  # 丢掉最后一个数量不够的 batch
     )
@@ -201,8 +200,9 @@ def dist_worker(
             writer.add_image(f'{task_id}/epoch_{epoch}_lr', lr_gird)
             writer.add_image(f'{task_id}/epoch_{epoch}_hr', hr_gird)
             writer.add_image(f'{task_id}/epoch_{epoch}_sr', sr_gird)
-            writer.add_scalar(f'{task_id}/MSE_Loss', loss_epoch.val, epoch)  # write loss
-        del lr_img, hr_img, sr_img, lr_gird, hr_gird, sr_gird
+            writer.add_scalar(f'{task_id}/MSE_Loss', loss_epoch.val, epoch)  # write loss\
+            del lr_gird, hr_gird, sr_gird
+        del lr_img, hr_img, sr_img
 
         # record loss
         loss_epochs_list.append(loss_epoch.val)
@@ -252,7 +252,7 @@ if __name__ == '__main__':
     tm.display_task_config(args.taskid)
     task_config_m = tm.get_task_config(args.taskid)
 
-    world_size = task_config_m['n_gpu']  # 使用多少个 GPU 进行训练
+    world_size = task_config_m['others']['n_gpu']  # 使用多少个 GPU 进行训练
 
     # check is configured
     task_id = task_config_m['task_id']
@@ -297,4 +297,3 @@ if __name__ == '__main__':
     print(f'total training costs {cost_time}')
 
 # log(未实现)
-
