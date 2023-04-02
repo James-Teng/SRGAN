@@ -49,10 +49,12 @@ if __name__ == '__main__':
         scaling_factor=4,
     )
 
-    if 'model' in checkpoint.keys():
+    if 'generator' in checkpoint.keys():
+        model.load_state_dict(checkpoint['generator'])
+    elif 'model' in checkpoint.keys():
         model.srresnet.load_state_dict(checkpoint['model'])
     else:
-        model.load_state_dict(checkpoint['generator'])
+        model.srresnet.load_state_dict(checkpoint)
     model = model.to(device)
     model.eval()
 
