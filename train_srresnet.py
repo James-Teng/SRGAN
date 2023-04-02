@@ -3,7 +3,12 @@
 # @Time    : 2023.3.17 19:32
 # @Author  : James.T
 # @File    : train_srresnet.py
+
 import sys
+import os
+import argparse
+import time
+from tqdm import tqdm
 
 import torch.backends.cudnn as cudnn
 import torch
@@ -15,12 +20,6 @@ import utils
 from arch import SRResNet
 import datasets
 import task_manager
-
-import os
-import argparse
-import time
-from tqdm import tqdm
-
 
 is_record_iter = False
 
