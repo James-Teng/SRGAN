@@ -45,7 +45,8 @@ class ConvolutionalBlock(nn.Module):
                 kernel_size=kernel_size,
                 stride=stride,
                 padding=kernel_size // 2,
-                bias=False if is_bn else True  # 有 bn 的时候不需要 bias
+                # bias=False if is_bn else True  # 有 bn 的时候不需要 bias
+
             )
         )
 
