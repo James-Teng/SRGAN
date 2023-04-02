@@ -111,9 +111,9 @@ if __name__ == '__main__':
                 sr_imgs = model(lr_imgs)
 
                 # save sr img
-                sr_imgs = utils.out_transform(sr_imgs)
+                sr_imgs_out = utils.out_transform(sr_imgs)
                 out_path = os.path.join(record_folder, dataset_name, f'{i}.png')
-                torchvision.utils.save_image(sr_imgs, out_path, quality=100)
+                torchvision.utils.save_image(sr_imgs_out, out_path, quality=100)
 
                 # eval on metrics
                 sr_imgs_y = utils.y_channel_transform(
