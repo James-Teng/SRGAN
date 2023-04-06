@@ -13,7 +13,12 @@ alpha = float(sys.argv[1])
 
 net_PSNR_path = './task_record/20230331_2135_Friday_df2k/checkpoint/checkpoint_srresnet.pth'
 net_SRGAN_path = './task_record/20230401_2017_Saturday_df2kg/checkpoint/checkpoint_srgan.pth'
-net_interp_path = f'./interpolation/interp_{int(alpha*10):02d}.pth'
+net_interp_path = f'./interpolation/interp_{int(alpha*10):02d}_df.pth'
+
+# net_PSNR_path = './task_record/20230325_0130_Saturday_test_env/checkpoint/checkpoint_srresnet.pth'
+# net_SRGAN_path = './task_record/20230325_2327_Saturday_test_srgan/checkpoint/checkpoint_srgan.pth'
+# net_interp_path = f'./interpolation/interp_{int(alpha*10):02d}_coco.pth'
+
 
 net_PSNR = torch.load(net_PSNR_path, map_location='cpu')['model']
 net_SRGAN = torch.load(net_SRGAN_path, map_location='cpu')['generator']
@@ -26,8 +31,8 @@ net_SRGAN = g.srresnet.state_dict()
 print('Interpolating with alpha = ', alpha)
 
 for k, v_PSNR in net_PSNR.items():
-    v_ESRGAN = net_SRGAN[k]
-    net_interp[k] = (1 - alpha) * v_PSNR + alpha * v_ESRGAN
+    v_SRGAN = net_SRGAN[k]
+    net_interp[k] = (1 - alpha) * v_PSNR + alpha * v_SRGAN
 
 torch.save(net_interp, net_interp_path)
 
