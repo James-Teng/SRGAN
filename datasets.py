@@ -109,6 +109,7 @@ def SRDataset(
         'BSD100': './data/BSD100',
         'COCO2014': './data/COCO2014',
         'DF2K_OST': './data/DF2K_OST',
+        'VOC2012': './data/VOC2012',
     }
     assert dataset_name in datasets_dict.keys(), f'{dataset_name} doesnt exist'
     dataset_path = datasets_dict[dataset_name]
