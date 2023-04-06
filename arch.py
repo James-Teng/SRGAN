@@ -7,7 +7,7 @@
 
 import torch
 from torch import nn
-from torchvision.models import vgg19, VGG19_Weights
+from torchvision.models import vgg19, VGG19_Weights, resnet34, ResNet34_Weights
 import torchvision
 
 import math
@@ -371,6 +371,24 @@ class TruncatedVGG19(nn.Module):
     def forward(self, x):
         y = self.truncated_vgg19(x)
         return y
+
+
+class TruncatedResNet34(nn.Module):
+    """
+
+    """
+    def __init__(self, i, j):
+        """
+        i : 第 i 个 layer
+        j : layer 中的第 j 个 basic block
+        """
+        super().__init__()
+        resnet34_pretrained = resnet34(weights=ResNet34_Weights.DEFAULT)
+        # resnet34_pretrained = torchvision.models.resnet34(pretrained=True)
+
+        for n, layer in enumerate(resnet34_pretrained.children()):
+
+            print(layer)
 
 
 if __name__ == '__main__':
