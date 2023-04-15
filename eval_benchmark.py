@@ -4,21 +4,22 @@
 # @Author  : James.T
 # @File    : eval_benchmark.py
 
-import torch
-import torchvision
-
-import arch
-import utils
-import datasets
-from skimage.metrics import peak_signal_noise_ratio, structural_similarity
-
-# from PIL import Image
-# import numpy as np
 import argparse
 import time
 import os
 import sys
 from tqdm import tqdm
+
+import torch
+import torchvision
+
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity
+# from PIL import Image
+# import numpy as np
+
+import arch
+import utils
+import datasets
 
 scaling_factor = 4
 
@@ -26,7 +27,7 @@ if __name__ == '__main__':
 
     # parser
     parser = argparse.ArgumentParser(description='Evaluations on Benchmark Datasets')
-    parser.add_argument("model_path", type=str, default=None, help="model path")
+    parser.add_argument("model_path", type=str, default=None, help="model path or bicubic")
     args = parser.parse_args()
 
     model_path = args.model_path
@@ -34,29 +35,37 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f'using {device} device')
 
-    # load model
-    try:
-        checkpoint = torch.load(model_path)
-    except FileNotFoundError:
-        print(f'no model found at {model_path}')
-        sys.exit()
-
-    model = arch.SRGenerator(
-        large_kernel_size=9,
-        small_kernel_size=3,
-        n_channels=64,
-        n_blocks=16,
-        scaling_factor=4,
-    )
-
-    if 'generator' in checkpoint.keys():
-        model.load_state_dict(checkpoint['generator'])
-    elif 'model' in checkpoint.keys():
-        model.srresnet.load_state_dict(checkpoint['model'])
+    if model_path.lower() == 'bicubic':
+        model = utils.UpSampleResize(4, torchvision.transforms.InterpolationMode.BICUBIC, '[-1, 1]')
+        lr_img_type = '[-1, 1]'
+    elif model_path.lower() == 'nearest':
+        model = utils.UpSampleResize(4, torchvision.transforms.InterpolationMode.NEAREST, '[-1, 1]')
+        lr_img_type = '[-1, 1]'
     else:
-        model.srresnet.load_state_dict(checkpoint)
-    model = model.to(device)
-    model.eval()
+        # load model
+        try:
+            checkpoint = torch.load(model_path)
+        except FileNotFoundError:
+            print(f'no model found at {model_path}')
+            sys.exit()
+
+        model = arch.SRGenerator(
+            large_kernel_size=9,
+            small_kernel_size=3,
+            n_channels=64,
+            n_blocks=16,
+            scaling_factor=4,
+        )
+
+        if 'generator' in checkpoint.keys():
+            model.load_state_dict(checkpoint['generator'])
+        elif 'model' in checkpoint.keys():
+            model.srresnet.load_state_dict(checkpoint['model'])
+        else:
+            model.srresnet.load_state_dict(checkpoint)
+        model = model.to(device)
+        model.eval()
+        lr_img_type = 'imagenet-norm'
 
     # benchmark dataset
     eval_datasets = ["Set5", "Set14", "BSD100"]
@@ -81,7 +90,7 @@ if __name__ == '__main__':
         # load dataset
         test_dataset = datasets.SRDataset(
             dataset_name=dataset_name,
-            lr_target_type='imagenet-norm',
+            lr_target_type=lr_img_type,
             hr_target_type='[-1, 1]',
             scaling_factor=scaling_factor,
         )

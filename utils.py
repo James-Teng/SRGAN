@@ -3,9 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
+import torchvision
 import torchvision.transforms.functional as F
 from torchvision import transforms
-import torchvision
+from torchvision.transforms import InterpolationMode
 
 from collections.abc import Callable
 from typing import Optional
@@ -127,21 +128,27 @@ def compose_lr_transforms(
         scaling_factor: int
 ):
     """
-    没有实现 img_type 转换
-    downsample and to imagenet norm, applied when it is model's input
+    downsample and to imagenet norm or [-1, 1]
     """
-    return transforms.Compose(
-        [
-            DownSampleResize(
-                scaling_factor,
-            ),
-            transforms.ToTensor(),
+    transform = [
+        DownSampleResize(
+            scaling_factor,
+        ),
+        transforms.ToTensor(),
+    ]
+
+    if img_type == '[-1, 1]':
+        transform.append(
+            TargetNorm()
+        )
+    elif img_type == 'imagenet-norm':
+        transform.append(
             transforms.Normalize(
                 mean=[0.485, 0.456, 0.406],  # ImageNet mean and std
                 std=[0.229, 0.224, 0.225],
             ),
-        ]
-    )
+        )
+    return transforms.Compose(transform)
 
 
 def compose_hr_transforms(
@@ -296,3 +303,26 @@ class DownSampleResize:
         w_scaled = int(img.width / self.scaling_factor)
         rs_img = img.resize((w_scaled, h_scaled), Image.Resampling.BICUBIC)
         return rs_img
+
+
+class UpSampleResize:
+    """
+    Need [-1,1] input
+    up sample by scaling_factor, using interpolation
+    """
+    def __init__(self, scaling_factor, interpolation, img_type):
+        assert img_type == '[-1, 1]'
+        self.scaling_factor = scaling_factor
+        self.interpolation = interpolation
+        self.antialias = False if interpolation == InterpolationMode.NEAREST else True
+
+    def __call__(self, img):
+        h_scaled = int(img.shape[-2] * self.scaling_factor)
+        w_scaled = int(img.shape[-1] * self.scaling_factor)
+        resize = transforms.Resize(
+            [h_scaled, w_scaled],
+            interpolation=self.interpolation,
+            antialias=self.antialias  # antialias
+        )
+        img = resize(img).clamp(min=-1, max=1)
+        return img
