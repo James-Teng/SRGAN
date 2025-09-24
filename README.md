@@ -1,2 +1,1 @@
-Hi SRGAN
-not finished
+A Simple Implementation of SRGAN
